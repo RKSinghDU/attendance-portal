@@ -14,29 +14,35 @@
   .tagline{font-size:13px;color:#888;}
   .card{background:#fff;border:1px solid #e0e0dc;border-radius:12px;padding:1.5rem;margin-bottom:1rem;}
   label{display:block;font-size:13px;color:#666;margin-bottom:6px;}
-  input[type=text],select{width:100%;padding:10px 12px;font-size:15px;border:1px solid #ccc;border-radius:8px;outline:none;background:#fff;margin-bottom:1rem;}
-  input[type=text]:focus,select:focus{border-color:#888;}
-  .btn{width:100%;padding:12px;font-size:15px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:opacity 0.2s;}
+  select{width:100%;padding:10px 12px;font-size:15px;border:1px solid #ccc;border-radius:8px;outline:none;background:#fff;margin-bottom:1rem;}
+  select:focus{border-color:#888;}
+  .search-wrap{position:relative;margin-bottom:1rem;}
+  .search-input{width:100%;padding:10px 12px;font-size:15px;border:1px solid #ccc;border-radius:8px;outline:none;background:#fff;}
+  .search-input:focus{border-color:#888;}
+  .dropdown{position:absolute;top:calc(100% + 2px);left:0;right:0;background:#fff;border:1px solid #ccc;border-radius:8px;max-height:220px;overflow-y:auto;z-index:20;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.1);}
+  .dd-item{padding:10px 12px;font-size:14px;cursor:pointer;border-bottom:1px solid #f0f0ee;}
+  .dd-item:last-child{border-bottom:none;}
+  .dd-item:hover,.dd-item:active{background:#f0f6ff;}
+  .dd-area{font-size:11px;color:#999;margin-left:6px;}
+  .chosen{background:#e6f1fb;border:1px solid #185fa5;border-radius:8px;padding:10px 12px;font-size:14px;color:#185fa5;margin-bottom:1rem;cursor:pointer;display:none;}
+  .chosen .ch{float:right;font-size:12px;color:#aaa;}
+  .btn{width:100%;padding:12px;font-size:15px;font-weight:500;border:none;border-radius:8px;cursor:pointer;}
   .btn-primary{background:#185fa5;color:#fff;}
   .btn-primary:hover{opacity:0.9;}
   .btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
-  .btn-retry{background:#fff;border:1px solid #aaa;color:#333;margin-top:0.75rem;}
-  .btn-retry:hover{background:#f0f0ee;}
+  .btn-retry{background:#fff;border:1px solid #aaa;color:#333;margin-top:0.75rem;width:100%;padding:10px;font-size:14px;border-radius:8px;cursor:pointer;}
   .status{padding:1rem;border-radius:8px;font-size:14px;margin-bottom:1rem;display:none;line-height:1.6;}
   .status.info{background:#e6f1fb;color:#185fa5;display:block;}
   .status.success{background:#eaf3de;color:#3b6d11;display:block;}
   .status.error{background:#fcebeb;color:#a32d2d;display:block;}
-  .status.warning{background:#faeeda;color:#854f0b;display:block;}
-  .location-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem;font-size:13px;color:#666;}
-  .dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;}
-  .dot.green{background:#3b6d11;}
-  .dot.red{background:#a32d2d;}
+  .loc-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem;font-size:13px;color:#666;}
+  .dot{width:8px;height:8px;border-radius:50%;background:#3b6d11;flex-shrink:0;}
   .divider{border:none;border-top:1px solid #e8e8e4;margin:1rem 0;}
   .footer{font-size:11px;color:#aaa;text-align:center;margin-top:2rem;line-height:1.6;}
-  .success-card{text-align:center;padding:2rem;}
-  .success-card .big{font-size:48px;margin-bottom:0.5rem;}
-  .success-card p{font-size:14px;color:#666;}
-  .steps{font-size:13px;color:#555;margin-top:0.75rem;padding-left:1rem;}
+  .sc{text-align:center;padding:2rem;}
+  .sc .big{font-size:48px;margin-bottom:0.5rem;}
+  .sc p{font-size:14px;color:#3b6d11;font-weight:500;}
+  .steps{font-size:13px;color:#555;margin-top:0.75rem;padding-left:1.25rem;}
   .steps li{margin-bottom:4px;}
 </style>
 </head>
@@ -48,171 +54,174 @@
     <div class="tagline">R K Singh · Ph.D. Classes</div>
   </div>
 
-  <div id="statusBox" class="status info">⏳ Getting your location — please wait...</div>
+  <div id="statusBox" class="status info">Getting your location — please wait...</div>
 
   <div class="card" id="formCard" style="display:none;">
-    <div class="location-row">
-      <div class="dot green"></div>
-      <span id="locText">Location verified</span>
-    </div>
+    <div class="loc-row"><div class="dot"></div><span id="locText">Location verified</span></div>
     <hr class="divider"/>
-    <label>Your full name</label>
-    <input type="text" id="studentName" placeholder="e.g. SONIA PODDAR" autocomplete="name"/>
+
+    <label>Select your name</label>
+    <div class="search-wrap">
+      <input type="text" class="search-input" id="nameSearch"
+        placeholder="Type to search your name..."
+        oninput="filterNames()" onfocus="showDD()" autocomplete="off"/>
+      <div class="dropdown" id="dd"></div>
+    </div>
+    <div class="chosen" id="chosenBox" onclick="clearName()">
+      <span class="ch">tap to change</span>
+      <span id="chosenText"></span>
+    </div>
+
     <label>Course</label>
-    <select id="courseSelect">
+    <select id="courseSelect" onchange="checkBtn()">
       <option value="">-- Select your course --</option>
       <option value="RM">Research Methodology (RM)</option>
-      <option value="OBD">Organisational Behaviour &amp; Development (OBD)</option>
+      <option value="OBD">Organisational Behaviour and Development (OBD)</option>
     </select>
-    <button class="btn btn-primary" id="submitBtn" onclick="submitAttendance()" disabled>Mark me present</button>
+
+    <button class="btn btn-primary" id="submitBtn" onclick="submit()" disabled>Mark me present</button>
   </div>
 
-  <div id="successCard" style="display:none;" class="card success-card">
-    <div class="big">✅</div>
-    <p id="successMsg">Attendance marked successfully!</p>
+  <div id="successCard" style="display:none;" class="card sc">
+    <div class="big">&#x2705;</div>
+    <p id="successMsg">Attendance marked!</p>
   </div>
 
-  <div class="footer">
-    Your GPS location is verified before marking attendance.<br/>
-    You must be physically present within 50 metres of the classroom.
-  </div>
+  <div class="footer">GPS location is verified before marking attendance.<br/>You must be within 50 metres of the classroom.</div>
 </div>
 
 <script>
-const CLASSROOM_LAT = 28.684575211268136;
-const CLASSROOM_LNG = 77.20926268413167;
-const RADIUS_METRES = 50;
-const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzAWq84mclpMVeK-1UHNVUT6FmgoUF2mRIK5y9t-UzHX0TiR-6mF20JN2g9vgVM2BjU/exec";
+const CLASSROOM_LAT=28.684575211268136,CLASSROOM_LNG=77.20926268413167,RADIUS_METRES=50;
+const WEBAPP_URL="https://script.google.com/macros/s/AKfycbzAWq84mclpMVeK-1UHNVUT6FmgoUF2mRIK5y9t-UzHX0TiR-6mF20JN2g9vgVM2BjU/exec";
+const STUDENTS=[
+  {n:"AANCHAL PANCHAL",a:"Marketing",c:"RM"},{n:"ABHAY BHOTIA",a:"Marketing",c:"RM"},
+  {n:"ADARSH YADAV",a:"Marketing",c:"RM"},{n:"ADIL AHMED",a:"OBD",c:"RM"},
+  {n:"ALKA GUPTA",a:"OBD",c:"RM"},{n:"ANIL KUMAR",a:"Finance",c:"RM"},
+  {n:"ANIMESH MINZ",a:"Marketing",c:"RM"},{n:"ANJALI",a:"OBD",c:"RM"},
+  {n:"ANSHIKA MAURYA",a:"Finance",c:"RM"},{n:"ANUJA YADAV",a:"Finance",c:"RM"},
+  {n:"ANUPAMA",a:"Accounting",c:"RM"},{n:"ASHOK SHARMA",a:"Finance",c:"RM"},
+  {n:"DEVANSHI JAISWAL",a:"Finance",c:"RM"},{n:"EKTA KUMARI",a:"Finance",c:"RM"},
+  {n:"KAIKHO ELOHRA",a:"Marketing",c:"RM"},{n:"KAJAL KASHYAP",a:"Marketing",c:"RM"},
+  {n:"KANCHAN RANI",a:"Marketing",c:"RM"},{n:"KARISHMA",a:"IB",c:"RM"},
+  {n:"KARTIK SHARMA",a:"Finance",c:"RM"},{n:"KAUSHAL YADAV",a:"Finance",c:"RM"},
+  {n:"KOMAL DAHIYA",a:"Marketing",c:"RM"},{n:"KRITI SINGH",a:"OBD",c:"RM"},
+  {n:"KUNDAN KUMAR VERMA",a:"IB",c:"RM"},{n:"LAXMI",a:"Marketing",c:"RM"},
+  {n:"LEEZA VARUN",a:"Marketing",c:"RM"},{n:"MANISHA",a:"Finance",c:"RM"},
+  {n:"MANISHA YADAV",a:"Finance",c:"RM"},{n:"MANLEEN KAUR",a:"Finance",c:"RM"},
+  {n:"MOHINI RAJPUT",a:"Marketing",c:"RM"},{n:"MRITUNJAY PANDEY",a:"IB",c:"RM"},
+  {n:"MUKESH KUMAR",a:"Finance",c:"RM"},{n:"MUSKAN CHHOKER",a:"OBD",c:"RM"},
+  {n:"NAYAN SINGHAL",a:"Finance",c:"RM"},{n:"NIDHI AGGARWAL",a:"Finance",c:"RM"},
+  {n:"NILAKANTHA PRADHAN",a:"Finance",c:"RM"},{n:"NISHA TAANK",a:"OBD",c:"RM"},
+  {n:"PIYUSH KUMAR",a:"Accounting",c:"RM"},{n:"POOJA YADAV",a:"Finance",c:"RM"},
+  {n:"PRAGYA WALIA",a:"OBD",c:"RM"},{n:"PRATIKSHA YADAV",a:"Finance",c:"RM"},
+  {n:"PREETI YADAV",a:"Marketing",c:"RM"},{n:"PRERNA AGROYEE",a:"Marketing",c:"RM"},
+  {n:"PRIYA SINGH",a:"Marketing",c:"RM"},{n:"PRIYA UPENDRANATH RAI",a:"OBD",c:"RM"},
+  {n:"R S JAPHET KHAILUNII",a:"Finance",c:"RM"},{n:"RAJITA DUBEY",a:"OBD",c:"RM"},
+  {n:"RAMITA",a:"Finance",c:"RM"},{n:"SHAMBHAVI SINGH",a:"Marketing",c:"RM"},
+  {n:"SHARIKA G.",a:"OBD",c:"RM"},{n:"SHIVANI",a:"OBD",c:"RM"},
+  {n:"SIMRAN ARORA",a:"OBD",c:"RM"},{n:"SONIA PODDAR",a:"OBD",c:"RM"},
+  {n:"SURAJ VISHVAS",a:"Finance",c:"RM"},{n:"SWATI JAIN",a:"Finance",c:"RM"},
+  {n:"TANIYA",a:"Marketing",c:"RM"},{n:"VANSHIKA LOCHAV",a:"Finance",c:"RM"},
+  {n:"VINEETA BHATI",a:"Finance",c:"RM"},{n:"VISHAL KUMAR",a:"Finance",c:"RM"}
+];
 
-let userLat = null, userLng = null, locationOk = false;
+let userLat=null,userLng=null,locationOk=false,chosen='';
 
-function setStatus(msg, type) {
-  const box = document.getElementById('statusBox');
-  box.className = 'status ' + type;
-  box.innerHTML = msg;
+function filterNames(){
+  const q=document.getElementById('nameSearch').value.trim().toUpperCase();
+  const dd=document.getElementById('dd');
+  if(!q){dd.style.display='none';return;}
+  const m=STUDENTS.filter(s=>s.n.includes(q));
+  if(!m.length){dd.innerHTML='<div class="dd-item" style="color:#aaa;cursor:default;">No student found</div>';dd.style.display='block';return;}
+  dd.innerHTML=m.map(s=>'<div class="dd-item" onclick="pick(\'' +s.n+ '\',\'' +s.c+ '\')">'+s.n+'<span class="dd-area">'+s.a+'</span></div>').join('');
+  dd.style.display='block';
 }
 
-function haversineDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
-            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
-            Math.sin(dLng/2)*Math.sin(dLng/2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+function showDD(){if(document.getElementById('nameSearch').value.trim())filterNames();}
+
+function pick(name,course){
+  chosen=name;
+  document.getElementById('nameSearch').style.display='none';
+  document.getElementById('dd').style.display='none';
+  document.getElementById('chosenText').textContent=name;
+  document.getElementById('chosenBox').style.display='block';
+  document.getElementById('courseSelect').value=course;
+  checkBtn();
 }
 
-function checkEnableButton() {
-  const name   = document.getElementById('studentName').value.trim();
-  const course = document.getElementById('courseSelect').value;
-  document.getElementById('submitBtn').disabled = !(locationOk && name && course);
+function clearName(){
+  chosen='';
+  document.getElementById('nameSearch').value='';
+  document.getElementById('nameSearch').style.display='block';
+  document.getElementById('nameSearch').focus();
+  document.getElementById('chosenBox').style.display='none';
+  document.getElementById('dd').style.display='none';
+  checkBtn();
 }
 
-document.getElementById('studentName').addEventListener('input', checkEnableButton);
-document.getElementById('courseSelect').addEventListener('change', checkEnableButton);
+document.addEventListener('click',function(e){if(!e.target.closest('.search-wrap'))document.getElementById('dd').style.display='none';});
 
-function startLocation() {
-  if (!navigator.geolocation) {
-    setStatus('❌ Your browser does not support location. Please use Chrome or Safari on your phone.', 'error');
-    return;
-  }
-  setStatus('⏳ Getting your location — please wait and allow location access if prompted...', 'info');
-  navigator.geolocation.getCurrentPosition(onSuccess, onError,
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-  );
+function checkBtn(){document.getElementById('submitBtn').disabled=!(locationOk&&chosen&&document.getElementById('courseSelect').value);}
+
+function setStatus(msg,type){const b=document.getElementById('statusBox');b.className='status '+type;b.innerHTML=msg;}
+
+function haversineDistance(lat1,lng1,lat2,lng2){
+  const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-function onSuccess(pos) {
-  userLat = pos.coords.latitude;
-  userLng = pos.coords.longitude;
-  const dist = Math.round(haversineDistance(userLat, userLng, CLASSROOM_LAT, CLASSROOM_LNG));
+function startLocation(){
+  if(!navigator.geolocation){setStatus('Browser does not support location. Use Chrome or Safari.','error');return;}
+  setStatus('Getting your location — please allow location access if prompted...','info');
+  navigator.geolocation.getCurrentPosition(onSuccess,onError,{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
 
-  if (dist <= RADIUS_METRES) {
-    locationOk = true;
-    setStatus('✅ Location verified — you are ' + dist + 'm from the classroom.', 'success');
-    document.getElementById('locText').textContent = 'You are ' + dist + 'm from classroom — verified';
-    document.getElementById('formCard').style.display = 'block';
-    checkEnableButton();
+function onSuccess(pos){
+  userLat=pos.coords.latitude;userLng=pos.coords.longitude;
+  const dist=Math.round(haversineDistance(userLat,userLng,CLASSROOM_LAT,CLASSROOM_LNG));
+  if(dist<=RADIUS_METRES){
+    locationOk=true;
+    setStatus('Location verified — you are '+dist+'m from the classroom.','success');
+    document.getElementById('locText').textContent='You are '+dist+'m from classroom — verified';
+    document.getElementById('formCard').style.display='block';
+    checkBtn();
   } else {
-    // Too far — this is the MAIN case for students outside classroom
-    setStatus(
-      '<strong>📍 You are ' + dist + ' metres away from the classroom.</strong><br/><br/>' +
-      'Attendance can only be marked when you are physically inside the classroom (within 50m).<br/><br/>' +
-      'If you are inside the classroom and seeing this message:<br/>' +
-      '<ul class="steps"><li>Turn on WiFi (improves GPS accuracy)</li>' +
-      '<li>Move near a window</li>' +
-      '<li>Tap Retry below</li></ul>',
-      'error'
-    );
-    // Show retry button
-    const retryBtn = document.createElement('button');
-    retryBtn.className = 'btn btn-retry';
-    retryBtn.textContent = '🔄 Retry location check';
-    retryBtn.onclick = function() { this.remove(); startLocation(); };
-    document.getElementById('statusBox').appendChild(retryBtn);
+    setStatus('<strong>You are '+dist+' metres away from the classroom.</strong><br/><br/>Attendance can only be marked when physically inside (within 50m).<br/><br/>If you are inside and seeing this:<br/><ul class="steps"><li>Turn on WiFi (improves GPS)</li><li>Move near a window</li><li>Tap Retry below</li></ul>','error');
+    const b=document.createElement('button');b.className='btn-retry';b.textContent='Retry location check';
+    b.onclick=function(){this.remove();startLocation();};
+    document.getElementById('statusBox').appendChild(b);
   }
 }
 
-function onError(err) {
-  let msg = '';
-  if (err.code === 1) {
-    // PERMISSION_DENIED — most common issue
-    msg = '<strong>📵 Location permission was denied.</strong><br/><br/>' +
-          'To fix this:<br/>' +
-          '<ul class="steps">' +
-          '<li><strong>Chrome on Android:</strong> Tap the 🔒 lock icon in address bar → Site settings → Location → Allow</li>' +
-          '<li><strong>Safari on iPhone:</strong> Go to Settings → Safari → Location → Allow</li>' +
-          '<li>Then reload this page</li></ul>';
-  } else if (err.code === 2) {
-    // POSITION_UNAVAILABLE
-    msg = '<strong>📡 Location signal unavailable.</strong><br/><br/>' +
-          'Try these steps:<br/>' +
-          '<ul class="steps">' +
-          '<li>Turn on WiFi (even without connecting — it helps GPS)</li>' +
-          '<li>Move closer to a window</li>' +
-          '<li>Make sure Location/GPS is ON in phone settings</li></ul>' +
-          '<button class="btn btn-retry" onclick="this.parentElement.innerHTML=\'\'; startLocation()">🔄 Retry</button>';
-  } else {
-    // TIMEOUT
-    msg = '<strong>⏱ Location request timed out.</strong><br/><br/>' +
-          'Your GPS is slow to respond. Please try again.' +
-          '<br/><br/><button class="btn btn-retry" onclick="this.parentElement.innerHTML=\'\'; startLocation()">🔄 Retry</button>';
-  }
-  setStatus(msg, 'error');
+function onError(err){
+  let msg='';
+  if(err.code===1)msg='<strong>Location permission denied.</strong><br/><br/>To fix:<br/><ul class="steps"><li><strong>Chrome (Android):</strong> Tap lock icon in address bar, Site settings, Location, Allow</li><li><strong>Safari (iPhone):</strong> Settings, Safari, Location, Allow</li><li>Then reload this page</li></ul>';
+  else if(err.code===2)msg='<strong>Location signal unavailable.</strong><br/><ul class="steps"><li>Turn on WiFi (helps GPS)</li><li>Move near a window</li><li>Ensure GPS is ON</li></ul><button class="btn-retry" onclick="this.parentElement.innerHTML=\'\';startLocation()">Retry</button>';
+  else msg='<strong>Location timed out.</strong><br/><br/><button class="btn-retry" onclick="this.parentElement.innerHTML=\'\';startLocation()">Retry</button>';
+  setStatus(msg,'error');
 }
 
-function submitAttendance() {
-  const name   = document.getElementById('studentName').value.trim().toUpperCase();
-  const course = document.getElementById('courseSelect').value;
-  if (!name || !course || !locationOk) return;
-
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.textContent = 'Submitting...';
-
-  const today   = new Date();
-  const dateStr = today.getDate() + '/' + (today.getMonth()+1) + '/' + today.getFullYear();
-  const timeStr = today.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
-
-  fetch(WEBAPP_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ name, course, lat: userLat, lng: userLng, date: dateStr, time: timeStr })
-  }).then(() => {
-    document.getElementById('formCard').style.display = 'none';
-    document.getElementById('statusBox').style.display = 'none';
-    document.getElementById('successCard').style.display = 'block';
-    document.getElementById('successMsg').textContent =
-      name + ', your attendance for ' + course + ' on ' + dateStr + ' has been marked ✓';
-  }).catch(() => {
-    setStatus('❌ Submission failed. Please try again or inform the teacher.', 'error');
-    btn.disabled = false;
-    btn.textContent = 'Mark me present';
+function submit(){
+  const course=document.getElementById('courseSelect').value;
+  if(!chosen||!course||!locationOk)return;
+  const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='Submitting...';
+  const today=new Date();
+  const dateStr=today.getDate()+'/'+(today.getMonth()+1)+'/'+today.getFullYear();
+  const timeStr=today.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  fetch(WEBAPP_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:chosen,course,lat:userLat,lng:userLng,date:dateStr,time:timeStr})
+  }).then(()=>{
+    document.getElementById('formCard').style.display='none';
+    document.getElementById('statusBox').style.display='none';
+    document.getElementById('successCard').style.display='block';
+    document.getElementById('successMsg').textContent=chosen+', your attendance for '+course+' on '+dateStr+' has been marked.';
+  }).catch(()=>{
+    setStatus('Submission failed. Please try again or inform the teacher.','error');
+    btn.disabled=false;btn.textContent='Mark me present';
   });
 }
 
-// Start on load
 startLocation();
 </script>
 </body>
