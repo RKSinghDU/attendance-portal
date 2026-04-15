@@ -39,9 +39,12 @@
   .dot{width:8px;height:8px;border-radius:50%;background:#3b6d11;flex-shrink:0;}
   .divider{border:none;border-top:1px solid #e8e8e4;margin:1rem 0;}
   .footer{font-size:11px;color:#aaa;text-align:center;margin-top:2rem;line-height:1.6;}
-  .sc{text-align:center;padding:2rem;}
-  .sc .big{font-size:48px;margin-bottom:0.5rem;}
-  .sc p{font-size:14px;color:#3b6d11;font-weight:500;}
+  .sc{text-align:center;padding:1.5rem;}
+  .sc .big{font-size:48px;margin-bottom:0.75rem;}
+  .sc .marked{font-size:15px;color:#3b6d11;font-weight:500;margin-bottom:1.25rem;}
+  .sign-reminder{background:#fff8e6;border:1px solid #f0c040;border-radius:10px;padding:1rem 1.25rem;text-align:left;margin-top:0.5rem;}
+  .sign-reminder .sign-title{font-size:14px;font-weight:500;color:#7a5800;margin-bottom:4px;}
+  .sign-reminder .sign-body{font-size:13px;color:#7a5800;line-height:1.6;}
   .steps{font-size:13px;color:#555;margin-top:0.75rem;padding-left:1.25rem;}
   .steps li{margin-bottom:4px;}
 </style>
@@ -84,7 +87,14 @@
 
   <div id="successCard" style="display:none;" class="card sc">
     <div class="big">&#x2705;</div>
-    <p id="successMsg">Attendance marked!</p>
+    <p class="marked" id="successMsg">Attendance marked!</p>
+    <div class="sign-reminder">
+      <div class="sign-title">&#x270D; Please sign the attendance sheet</div>
+      <div class="sign-body">
+        Do not forget to sign the physical attendance sheet being circulated in class.
+        Your signature will be taken as <strong>conclusive proof of attendance</strong>.
+      </div>
+    </div>
   </div>
 
   <div class="footer">GPS location is verified before marking attendance.<br/>You must be within 50 metres of the classroom.</div>
@@ -133,7 +143,7 @@ function filterNames(){
   if(!q){dd.style.display='none';return;}
   const m=STUDENTS.filter(s=>s.n.includes(q));
   if(!m.length){dd.innerHTML='<div class="dd-item" style="color:#aaa;cursor:default;">No student found</div>';dd.style.display='block';return;}
-  dd.innerHTML=m.map(s=>'<div class="dd-item" onclick="pick(\'' +s.n+ '\',\'' +s.c+ '\')">'+s.n+'<span class="dd-area">'+s.a+'</span></div>').join('');
+  dd.innerHTML=m.map(s=>'<div class="dd-item" onclick="pick(\''+s.n+'\',\''+s.c+'\')">'+s.n+'<span class="dd-area">'+s.a+'</span></div>').join('');
   dd.style.display='block';
 }
 
