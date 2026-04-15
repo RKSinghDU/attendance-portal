@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mark Attendance — DSE</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:system-ui,sans-serif;background:#f5f5f3;color:#1a1a18;padding:2rem 1rem;min-height:100vh;}
+  .container{max-width:480px;margin:0 auto;}
+  .header{margin-bottom:2rem;}
+  .subtitle{font-size:13px;color:#666;}
+  h2{font-size:20px;font-weight:500;margin:4px 0 4px;}
+  .tagline{font-size:13px;color:#888;}
+  .card{background:#fff;border:1px solid #e0e0dc;border-radius:12px;padding:1.5rem;margin-bottom:1rem;}
+  label{display:block;font-size:13px;color:#666;margin-bottom:6px;}
+  input[type=text],select{width:100%;padding:10px 12px;font-size:15px;border:1px solid #ccc;border-radius:8px;outline:none;background:#fff;margin-bottom:1rem;}
+  input[type=text]:focus,select:focus{border-color:#888;}
+  .btn{width:100%;padding:12px;font-size:15px;font-weight:500;border:none;border-radius:8px;cursor:pointer;transition:opacity 0.2s;}
+  .btn-primary{background:#185fa5;color:#fff;}
+  .btn-primary:hover{opacity:0.9;}
+  .btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
+  .status{padding:1rem;border-radius:8px;font-size:14px;margin-bottom:1rem;display:none;}
+  .status.info{background:#e6f1fb;color:#185fa5;display:block;}
+  .status.success{background:#eaf3de;color:#3b6d11;display:block;}
+  .status.error{background:#fcebeb;color:#a32d2d;display:block;}
+  .status.warning{background:#faeeda;color:#854f0b;display:block;}
+  .location-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem;font-size:13px;color:#666;}
+  .dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;}
+  .dot.green{background:#3b6d11;}
+  .dot.red{background:#a32d2d;}
+  .dot.amber{background:#854f0b;}
+  .dot.pulse{animation:pulse 1.5s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+  .divider{border:none;border-top:1px solid #e8e8e4;margin:1rem 0;}
+  .footer{font-size:11px;color:#aaa;text-align:center;margin-top:2rem;}
+  .already-marked{text-align:center;padding:2rem;}
+  .already-marked .big{font-size:48px;margin-bottom:0.5rem;}
+  .already-marked p{font-size:14px;color:#666;}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="subtitle">Department of Commerce · Delhi School of Economics</div>
+    <h2>Mark Attendance</h2>
+    <div class="tagline">R K Singh · Ph.D. Classes</div>
+  </div>
+
+  <div id="statusBox" class="status info">Checking your location...</div>
+
+  <div class="card" id="formCard" style="display:none;">
+    <div class="location-row">
+      <div class="dot green" id="locDot"></div>
+      <span id="locText">Location verified</span>
+    </div>
+    <hr class="divider"/>
+
+    <label>Your full name</label>
+    <input type="text" id="studentName" placeholder="e.g. SONIA PODDAR" autocomplete="name"/>
+
+    <label>Course</label>
+    <select id="courseSelect">
+      <option value="">-- Select your course --</option>
+      <option value="RM">Research Methodology (RM)</option>
+      <option value="OBD">Organisational Behaviour & Development (OBD)</option>
+    </select>
+
+    <button class="btn btn-primary" id="submitBtn" onclick="submitAttendance()" disabled>Mark me present</button>
+  </div>
+
+  <div id="successCard" style="display:none;" class="card already-marked">
+    <div class="big">✅</div>
+    <p id="successMsg">Attendance marked successfully!</p>
+  </div>
+
+  <div class="footer">This page verifies your GPS location before marking attendance.<br/>You must be within 50 metres of the classroom.</div>
+</div>
+
+<script>
+// ── Configuration ──────────────────────────────────────────
+const CLASSROOM_LAT  = 28.684575211268136;
+const CLASSROOM_LNG  = 77.20926268413167;
+const RADIUS_METRES  = 50;
+// Your Google Apps Script Web App URL — replace after deploying
+const WEBAPP_URL = "YOUR_WEBAPP_URL";
+// ───────────────────────────────────────────────────────────
+
+let userLat = null, userLng = null, locationOk = false;
+
+function setStatus(msg, type) {
+  const box = document.getElementById('statusBox');
+  box.className = 'status ' + type;
+  box.textContent = msg;
+}
+
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+            Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function checkEnableButton() {
+  const name   = document.getElementById('studentName').value.trim();
+  const course = document.getElementById('courseSelect').value;
+  document.getElementById('submitBtn').disabled = !(locationOk && name && course);
+}
+
+document.getElementById('studentName').addEventListener('input', checkEnableButton);
+document.getElementById('courseSelect').addEventListener('change', checkEnableButton);
+
+// Get location on load
+if (!navigator.geolocation) {
+  setStatus('Your browser does not support location access. Please use Chrome or Safari.', 'error');
+} else {
+  setStatus('Getting your location... please allow location access when prompted.', 'info');
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      const dist = Math.round(haversineDistance(userLat, userLng, CLASSROOM_LAT, CLASSROOM_LNG));
+
+      if (dist <= RADIUS_METRES) {
+        locationOk = true;
+        setStatus('Location verified ✓ You are ' + dist + 'm from the classroom.', 'success');
+        document.getElementById('locDot').className = 'dot green';
+        document.getElementById('locText').textContent = 'You are ' + dist + 'm from classroom — verified';
+        document.getElementById('formCard').style.display = 'block';
+        checkEnableButton();
+      } else {
+        setStatus('You appear to be ' + dist + ' metres away from the classroom. Attendance can only be marked when you are physically present inside. If you believe this is an error, please inform the teacher.', 'error');
+      }
+    },
+    function(err) {
+      let msg = 'Location access denied. ';
+      if (err.code === 1) msg += 'Please allow location permission in your browser settings and reload.';
+      else if (err.code === 2) msg += 'Location unavailable. Try moving near a window or enabling WiFi.';
+      else msg += 'Location request timed out. Please reload and try again.';
+      setStatus(msg, 'error');
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+function submitAttendance() {
+  const name   = document.getElementById('studentName').value.trim().toUpperCase();
+  const course = document.getElementById('courseSelect').value;
+  if (!name || !course || !locationOk) return;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  const today = new Date();
+  const dateStr = today.getDate() + '/' + (today.getMonth()+1) + '/' + today.getFullYear();
+  const timeStr = today.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+
+  const payload = {
+    name: name,
+    course: course,
+    lat: userLat,
+    lng: userLng,
+    date: dateStr,
+    time: timeStr
+  };
+
+  fetch(WEBAPP_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(() => {
+    document.getElementById('formCard').style.display = 'none';
+    document.getElementById('statusBox').style.display = 'none';
+    document.getElementById('successCard').style.display = 'block';
+    document.getElementById('successMsg').textContent =
+      name + ', your attendance for ' + course + ' on ' + dateStr + ' has been marked. ✓';
+  }).catch(err => {
+    setStatus('Submission failed. Please try again or inform the teacher.', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Mark me present';
+  });
+}
+</script>
+</body>
+</html>
