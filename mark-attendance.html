@@ -124,6 +124,32 @@ const ALL_STUDENTS={
 
 let userLat=null,userLng=null,locationOk=false,chosen='',currentCourse='';
 
+// ── DEVICE FINGERPRINT ───────────────────────────────────────
+// Generates a stable hash from browser properties.
+// Resets daily so the same device can mark attendance on different days.
+function getDeviceFingerprint() {
+  const today = new Date();
+  const dateStr = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+  const raw = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width + 'x' + screen.height,
+    screen.colorDepth,
+    new Date().getTimezoneOffset(),
+    navigator.hardwareConcurrency || '',
+    navigator.platform || '',
+    dateStr  // resets every day
+  ].join('|');
+  // Simple hash
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+// ─────────────────────────────────────────────────────────────
+
 function onCourseChange(){
   currentCourse=document.getElementById('courseSelect').value;
   clearName();
@@ -212,8 +238,9 @@ function submit(){
   const today=new Date();
   const dateStr=today.getDate()+'/'+(today.getMonth()+1)+'/'+today.getFullYear();
   const timeStr=today.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const deviceId=getDeviceFingerprint();
   fetch(WEBAPP_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name:chosen,course,lat:userLat,lng:userLng,date:dateStr,time:timeStr})
+    body:JSON.stringify({name:chosen,course,lat:userLat,lng:userLng,date:dateStr,time:timeStr,deviceId})
   }).then(()=>{
     document.getElementById('formCard').style.display='none';
     document.getElementById('statusBox').style.display='none';
