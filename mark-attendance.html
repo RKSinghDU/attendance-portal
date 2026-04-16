@@ -47,6 +47,7 @@
   .steps{font-size:13px;color:#555;margin-top:0.75rem;padding-left:1.25rem;}
   .steps li{margin-bottom:4px;}
   optgroup{font-weight:600;color:#333;}
+  .consent{font-size:11px;color:#999;margin-top:0.5rem;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -94,6 +95,7 @@
     </div>
 
     <button class="btn btn-primary" id="submitBtn" onclick="submit()" disabled>Mark me present</button>
+    <div class="consent">By marking attendance you confirm you are physically present in class. Your name and attendance record will be saved for academic purposes as per University of Delhi norms.</div>
   </div>
 
   <div id="successCard" style="display:none;" class="card sc">
@@ -122,33 +124,24 @@ const ALL_STUDENTS={
 "COMC004-CF":["VRISHTI GOEL","AMAN YADAV","ANKIT KUMAR","ARCHI CHAHAL","ASHNA KUSHWAHA","PRIYA VOHRA","RITIKA","TAMANNA","VANDANA","MOHD SOHAIL","VIDIT SACHDEVA"]
 };
 
-let userLat=null,userLng=null,locationOk=false,chosen='',currentCourse='';
+let userLat=null,userLng=null,locationOk=false,chosen='',currentCourse='',sessionToken='';
 
-// ── DEVICE FINGERPRINT ───────────────────────────────────────
-// Generates a stable hash from browser properties.
-// Resets daily so the same device can mark attendance on different days.
-function getDeviceFingerprint() {
-  const today = new Date();
-  const dateStr = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
-  const raw = [
-    navigator.userAgent,
-    navigator.language,
-    screen.width + 'x' + screen.height,
-    screen.colorDepth,
-    new Date().getTimezoneOffset(),
-    navigator.hardwareConcurrency || '',
-    navigator.platform || '',
-    dateStr  // resets every day
-  ].join('|');
-  // Simple hash
-  let hash = 0;
-  for (let i = 0; i < raw.length; i++) {
-    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash).toString(36);
-}
+// ── SESSION TOKEN ────────────────────────────────────────────
+// Token is fetched from the server — no device properties used.
+// Server generates a random UUID. Token is used to prevent one
+// device marking attendance for multiple students in the same course.
+// No personal data is derived or stored in the token.
 // ─────────────────────────────────────────────────────────────
+async function fetchSessionToken() {
+  try {
+    const resp = await fetch(WEBAPP_URL + '?action=getToken');
+    const data = await resp.json();
+    sessionToken = data.token || '';
+  } catch(e) {
+    // If token fetch fails, proceed without token (fail open)
+    sessionToken = '';
+  }
+}
 
 function onCourseChange(){
   currentCourse=document.getElementById('courseSelect').value;
@@ -214,6 +207,8 @@ function onSuccess(pos){
     setStatus('Location verified — you are '+dist+'m from the classroom.','success');
     document.getElementById('locText').textContent='You are '+dist+'m from classroom — verified';
     document.getElementById('formCard').style.display='block';
+    // Fetch session token once location is confirmed
+    fetchSessionToken();
     checkBtn();
   } else {
     setStatus('<strong>You are '+dist+' metres away from the classroom.</strong><br/><br/>Attendance can only be marked when physically inside (within 50m).<br/><br/>If you are inside and seeing this:<br/><ul class="steps"><li>Turn on WiFi (improves GPS)</li><li>Move near a window</li><li>Tap Retry below</li></ul>','error');
@@ -238,9 +233,8 @@ function submit(){
   const today=new Date();
   const dateStr=today.getDate()+'/'+(today.getMonth()+1)+'/'+today.getFullYear();
   const timeStr=today.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-  const deviceId=getDeviceFingerprint();
   fetch(WEBAPP_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name:chosen,course,lat:userLat,lng:userLng,date:dateStr,time:timeStr,deviceId})
+    body:JSON.stringify({name:chosen,course,lat:userLat,lng:userLng,date:dateStr,time:timeStr,sessionToken})
   }).then(()=>{
     document.getElementById('formCard').style.display='none';
     document.getElementById('statusBox').style.display='none';
